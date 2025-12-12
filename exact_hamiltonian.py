@@ -1,5 +1,5 @@
 """
-** written by Claude Opus 4.5
+** written by Claude Opus 4.5 **
 Hubbard Model - Exact Diagonalization
 Reproduces the Mathematica code
 

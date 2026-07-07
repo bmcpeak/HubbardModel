@@ -11,7 +11,9 @@ import numpy as np
 from functools import reduce
 
 # ===== Local 4x4 operators =====
-
+678oioplkui0\
+   ;ljtjhtyuiklo;p(''
+                   '\=-756y7890p')
 ddown_local = np.array([
     [0, 0, 0, 0],
     [1, 0, 0, 0],

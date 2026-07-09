@@ -1,32 +1,33 @@
 """
 Infinite-volume Hubbard bootstrap.
 
-  M blocks:  <O^dag O>      >= 0   (moment matrices)
-  G blocks:  <O^dag [H,O]>  >= 0   (ground-state matrices; number-conserving
-                                    O only -- validity at fixed filling)
-  Equalities: filling, SU(2) Ward identities, harvested eigenstate
-              constraints <[H,O]> = 0 where in-span.
+  M blocks:  <O^dag O>      >= 0   one block per N-charge sector, all degrees
+                                    <= level on the patch, spins mixed (Sz
+                                    pruning block-diagonalizes internally).
+                                    Both q and -q sectors kept: P/Q-type
+                                    conditions differ by anticommutator
+                                    inhomogeneities, NOT redundant.
+  G blocks:  <O^dag [H,O]>  >= 0   number-conserving O only.
+  Equalities: filling, SU(2) Ward identities, in-span <[H,O]> = 0,
+              G-antisymmetric parts. ALL equalities are Sz-scrubbed before
+              assembly: charged EVs are zero by selection, so deleting
+              charged keys from an equality imposes the rule, same as
+              pruning PSD entries. (Skipping this for g_lin was the
+              KeyError-as-giant-integer bug.)
 
-All bootstrap content -- which operators enter M and G -- lives in
-Section 6 (CONFIGURATION) and nowhere else.
+All bootstrap content lives in Section 6 (CONFIGURATION).
 
-Coordinate discipline (source of the last bug, read this):
-  canon anchors everything at (0,0). ad_H grows support by one ring, so any
-  operator fed to ad_H must first be shifted into the window interior by
-  (OX, OY) -- and CRUCIALLY, when forming products like O^dag [H, O], BOTH
-  factors must live at the same offset. canon erases a global shift, not a
-  relative one. ad_H asserts its input is interior; shift_op is the tool.
+Coordinate discipline: canon anchors at (0,0); ad_H grows support by one
+ring, so its inputs are pre-shifted by (OX, OY), and BOTH factors of any
+product must share the offset -- canon erases global shifts, not relative
+ones. ad_H asserts interiority.
 
-Representation:
-  - Monomial = packed int (D << NMODES) | C over window modes.
-    d's ascending, c's descending; dagger = sign-free swap (D,C)->(C,D).
-  - Operator = dict {key: coeff}, normal-ordered monomials only.
-  - Linear form = dict {canonical_key: coeff}; key 0 = constant term.
+Representation: monomial = packed int (D << NMODES) | C; d's ascending,
+c's descending; dagger = sign-free (D,C)->(C,D). Operator = dict
+{key: coeff}. Linear form = dict {canonical_key: coeff}, key 0 = constant.
 
-Physics assumptions:
-  - Reality <O^dag> = <O> (dagger in symmetry group).
-  - Singlet ground state (Ward identities; Sz selection rule).
-  - G blocks and <[H,O]> = 0 valid in the ground state.
+Physics assumptions: reality <O^dag> = <O>; singlet ground state (wards,
+Sz selection); G and <[H,O]> = 0 valid in the ground state.
 """
 
 import sys
@@ -81,7 +82,6 @@ def pack_sites(Dsites, Csites):
     return pack(D, C)
 
 def shift_key(key, di, dj):
-    """Uniform translation: order-preserving, hence sign-free."""
     D, C = unpack(key)
     Ds = [(i + di, j + dj, s) for i, j, s in sites_of(D)]
     Cs = [(i + di, j + dj, s) for i, j, s in sites_of(C)]
@@ -256,34 +256,47 @@ def show_op(op):
     return "  +  ".join(f"({v}) {show(k)}" for k, v in sorted(op.items()))
 
 # ============================================================
-# 6. CONFIGURATION -- all bootstrap content is chosen HERE
+# 6. CONFIGURATION
 # ============================================================
 
-PATCH = [(i, j) for i in range(3) for j in range(3)]
+P = 2
+PATCH = [(i, j) for i in range(P) for j in range(P)]
 
-# Interior anchor for ad_H (adds one ring of support).
-# Invariant: max candidate coordinate + OX + 1 < W.
+# Interior anchor for ad_H (adds one ring). Invariant: (P-1) + OX + 1 < W.
 OX, OY = 2, 2
 
-def build_M_bases():
-    b1 = [c_op(i, j, DN) for i, j in PATCH]
-    b2 = [c_op(i, j, UP) for i, j in PATCH]
-    b3 = [d_op(i, j, DN) for i, j in PATCH]
-    b4 = [d_op(i, j, UP) for i, j in PATCH]
-    b5  = [multiply(c_op(*p, DN), c_op(*q, DN)) for p, q in combinations(PATCH, 2)]
-    b6  = [multiply(c_op(*p, UP), c_op(*q, DN)) for p in PATCH for q in PATCH]
-    b7  = [multiply(c_op(*p, UP), c_op(*q, UP)) for p, q in combinations(PATCH, 2)]
-    b8  = [multiply(d_op(*p, DN), d_op(*q, DN)) for p, q in combinations(PATCH, 2)]
-    b9  = [multiply(d_op(*p, UP), d_op(*q, DN)) for p in PATCH for q in PATCH]
-    b10 = [multiply(d_op(*p, UP), d_op(*q, UP)) for p, q in combinations(PATCH, 2)]
-    b11 = [multiply(d_op(*p, 1 - k), c_op(*q, k))
-           for p in PATCH for q in PATCH for k in (DN, UP)]
-    b12 = [IDENTITY] + [multiply(d_op(*p, k), c_op(*q, k))
-                        for p in PATCH for q in PATCH for k in (DN, UP)]
-    return [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12]
+def set_patch(p):
+    global P, PATCH
+    P = p
+    PATCH = [(i, j) for i in range(P) for j in range(P)]
+    assert (P - 1) + OX + 1 < W, "window too small for this patch"
+    # canon / _mono_product / ad_H caches are keyed on patterns, not on P:
+    # nothing to clear.
+
+def _pool(patch):
+    return [(i, j, s) for (i, j) in patch for s in (0, 1)]
+
+def monomials(patch, nd, nc):
+    pool = _pool(patch)
+    return [op_of(pack_sites(D, C))
+            for D in combinations(pool, nd)
+            for C in combinations(pool, nc)]
+
+def build_M_bases(level):
+    assert level in (2, 3)
+    q0  = [IDENTITY] + monomials(PATCH, 1, 1)
+    qm1 = monomials(PATCH, 0, 1)
+    qp1 = monomials(PATCH, 1, 0)
+    qm2 = monomials(PATCH, 0, 2)
+    qp2 = monomials(PATCH, 2, 0)
+    bases = [q0, qm1, qp1, qm2, qp2]
+    if level >= 3:
+        qm1 += monomials(PATCH, 1, 2)
+        qp1 += monomials(PATCH, 2, 1)
+        bases += [monomials(PATCH, 0, 3), monomials(PATCH, 3, 0)]
+    return bases
 
 def build_G_candidates():
-    """Number-conserving only. The in-span filter removes what doesn't fit."""
     cands = [multiply(d_op(*p, a), c_op(*q, b))
              for p in PATCH for q in PATCH for a in (DN, UP) for b in (DN, UP)]
     cands += [multiply(multiply(d_op(*p, UP), c_op(*p, UP)),
@@ -327,8 +340,18 @@ def prune_charged(mats):
                 for k in [k for k in entry if k != 0 and sz_charge(k) != 0]:
                     del entry[k]
 
+def scrub_forms(forms):
+    """Delete Sz-charged keys from equality forms (their EVs are zero by
+    selection, so deletion imposes the rule). Drop forms that empty out."""
+    out = []
+    for f in forms:
+        f2 = {k: v for k, v in f.items() if k == 0 or sz_charge(k) == 0}
+        if f2:
+            out.append(f2)
+    return out
+
 # ============================================================
-# 8. Hamiltonian: objective, adjoint action, eigenstate constraints
+# 8. Hamiltonian
 # ============================================================
 
 def hop_part():
@@ -382,10 +405,6 @@ def _u_terms_touching(sites):
 
 @lru_cache(maxsize=None)
 def ad_H(key):
-    """[H, monomial] as (t_items, U_items); t_items multiply -t downstream.
-    Input must already be interior (caller shifts); output is in the SAME
-    coordinates as the input. canon erases a global offset shared by both
-    factors of a product, never a relative one."""
     sites = support_sites(key)
     assert all(i >= 1 and j >= 1 for i, j in sites), \
         "ad_H on edge-anchored key: shift_op first"
@@ -404,10 +423,6 @@ def ad_H_op(op, t, U):
     return {k: v for k, v in out.items() if v != 0}
 
 def linear_H_constraints(variables, span, t, U):
-    """<[H, O_v]> = 0 in any energy eigenstate. In-span forms are usable
-    equalities (orbit-pairing theorem predicts ZERO at degree-4 span; a
-    nonzero count means the theorem failed -- verify one by hand before
-    trusting). Out-of-span forms are dropped."""
     kept, out_of_span = [], 0
     seen = set()
     for v in sorted(variables):
@@ -423,19 +438,49 @@ def linear_H_constraints(variables, span, t, U):
             out_of_span += 1
     return kept, out_of_span
 
+def show_mma(key):
+    """Monomial in Mathematica NCM notation, 1-indexed sites."""
+    if key == 0:
+        return "1"
+    Dsites, Csites = sites_of(key >> NMODES), sites_of(key & CMASK)
+    parts  = [f"d[{i+1},{j+1},{s}]" for i, j, s in Dsites]
+    parts += [f"c[{i+1},{j+1},{s}]" for i, j, s in reversed(Csites)]
+    return "**".join(parts)
+
+def report_H_constraints(variables, span, t, U, path="hcons_check.m"):
+    """For each kept <[H,O_v]> = 0, write the generator v and the constraint
+    form in Mathematica syntax. Each form entry is a CANONICAL pattern: to
+    evaluate in an ED state, average the pattern's EV over all translations
+    and the 32 group images (with signs), per the canon definition --
+    equivalently, embed the pattern anywhere and symmetrize the state's EV.
+    The generator O_v is reported UNSHIFTED (anchored at (1,1))."""
+    lines = ["(* <[H,O]> = 0 constraints; evaluate each form == 0 in an",
+             "   exact eigenstate. Site indices are 1-based. *)"]
+    idx = 0
+    seen = set()
+    for v in sorted(variables):
+        form = to_linear_form(ad_H_op(shift_op(op_of(v), OX, OY), t, U))
+        if not form or not set(form) <= span:
+            continue
+        h = _normalize(form)
+        if h in seen:
+            continue
+        seen.add(h)
+        idx += 1
+        lines.append(f"\n(* constraint {idx}: generator O = {show_mma(v)} *)")
+        terms = " + ".join(
+            f"({v2})*ev[{show_mma(k)}]" for k, v2 in sorted(form.items()))
+        lines.append(f"hcons[{idx}] = {terms};")
+    lines.append(f"\nnhcons = {idx};")
+    with open(path, "w") as fh:
+        fh.write("\n".join(lines))
+    log(f"wrote {idx} constraints to {path}")
+
 # ============================================================
 # 9. G blocks
 # ============================================================
 
 def build_G_block(cands, span, t, U):
-    """<O_i^dag [H, O_j]> over shifted candidates. Two-stage filter:
-    (1) diagonal prefilter -- a candidate whose own <O^dag [H,O]> leaves the
-        span can never survive (deleting OTHERS can't repair its diagonal),
-        and the diagonal costs one entry instead of a row;
-    (2) greedy removal on the survivors to reach an in-span principal
-        submatrix.
-    Then symmetrize, harvesting antisymmetric parts (= <[H, O_i^dag O_j]>,
-    valid eigenstate equalities). Returns (kept_original_indices, G, harvested)."""
     for o in cands:
         for k in o:
             assert n_charge(k) == 0, "number-changing G candidate"
@@ -444,14 +489,12 @@ def build_G_block(cands, span, t, U):
     hops = [ad_H_op(o, t, U) for o in scands]
     dags = [dagger(o) for o in scands]
 
-    # stage 1: diagonal prefilter
     pre = [i for i in range(len(scands))
            if set(to_linear_form(multiply(dags[i], hops[i]))) <= span]
     log(f"  G prefilter: {len(pre)}/{len(cands)} pass the diagonal test")
     if not pre:
         return [], [], []
 
-    # stage 2: full form fill on survivors, then greedy
     n = len(pre)
     form = [[to_linear_form(multiply(dags[pre[i]], hops[pre[j]]))
              for j in range(n)] for i in range(n)]
@@ -533,6 +576,12 @@ def assemble_and_solve(blocks, obj, equalities, var_index, do_max=False,
     dims = [len(m) for m in blocks]
     nE = len(equalities)
 
+    # loud failure instead of KeyError-as-giant-integer:
+    for form, _ in equalities:
+        for k in form:
+            assert k == 0 or k in var_index, \
+                f"equality references non-variable {show(k)} (Sz-scrub missing?)"
+
     f = [0.0] * nv
     fconst = 0.0
     for k, v in obj.items():
@@ -549,6 +598,8 @@ def assemble_and_solve(blocks, obj, equalities, var_index, do_max=False,
         for i in range(n):
             for j in range(i + 1):
                 for k, val in m[i][j].items():
+                    assert k == 0 or k in var_index, \
+                        f"block entry references non-variable {show(k)}"
                     tgt = a0 if k == 0 else pervar.setdefault(
                         var_index[k], ([], [], []))
                     tgt[0].append(i); tgt[1].append(j); tgt[2].append(float(val))
@@ -584,6 +635,8 @@ def assemble_and_solve(blocks, obj, equalities, var_index, do_max=False,
             task.putobjsense(mosek.objsense.maximize)
             t1 = time.time()
             task.optimize()
+            if stream_log:
+                sys.stdout.flush()
             solsta = task.getsolsta(mosek.soltype.itr)
             pobj = task.getprimalobj(mosek.soltype.itr)
             log(f"  solve: {time.time()-t1:.1f}s, status {solsta}, "
@@ -599,37 +652,43 @@ def assemble_and_solve(blocks, obj, equalities, var_index, do_max=False,
     return lower, upper
 
 # ============================================================
-# 12. Main pipeline
+# 12. Pipeline
 # ============================================================
 
-def moment_matrix(basis):
+def moment_matrix(basis, label=None):
+    n = len(basis)
     dags = [dagger(o) for o in basis]
-    return [[to_linear_form(multiply(di, bj)) for bj in basis] for di in dags]
+    rows = []
+    t0 = time.time()
+    for i in range(n):
+        rows.append([to_linear_form(multiply(dags[i], bj)) for bj in basis])
+        if label and n >= 500 and (i + 1) % 100 == 0:
+            log(f"    {label}: row {i+1}/{n} ({time.time()-t0:.0f}s)")
+    return rows
 
 def sanity_check_G():
-    """Doublon diagonal of G must reproduce the old Mathematica G1 structure:
-    +4t on the hop pattern, +U-structure on the degree-4 pattern. The hop
-    sign is unambiguous; a zero or a -4 here means coordinate or sign rot."""
     doub = shift_op(u_part(), OX, OY)
     entry = to_linear_form(multiply(dagger(doub), ad_H_op(doub, 1, 8)))
-    log(f"G sanity (doublon diagonal): {show_op(entry)}")
     assert entry, "G doublon diagonal is zero: coordinate bug is back"
-    return entry
 
-def solve_bootstrap(t=1, U=8, nu=Fraction(7, 8), use_G=True, do_max=False):
+def solve_bootstrap(level=3, t=1, U=8, nu=Fraction(7, 8), use_G=True,
+                    do_max=False, stream_log=False):
     t0 = time.time()
-    Mbases = build_M_bases()
-    Mmats = [moment_matrix(b) for b in Mbases]
-    log(f"M fill: {time.time()-t0:.1f}s, blocks {[len(m) for m in Mmats]}")
+    Mbases = build_M_bases(level)
+    Mmats = [moment_matrix(b, label=f"block {i}")
+             for i, b in enumerate(Mbases)]
+    log(f"M fill (level {level}): {time.time()-t0:.1f}s, "
+        f"blocks {[len(m) for m in Mmats]}")
 
     neutral, charged = split_variables(Mmats)
     span = neutral | charged | {0}
 
+    t0 = time.time()
     hcons, h_oos = linear_H_constraints(neutral, span, t, U)
-    log(f"linear H-constraints: {len(hcons)} kept (theorem predicts 0), "
-        f"{h_oos} out-of-span")
+    log(f"linear H-constraints: {len(hcons)} kept, {h_oos} out-of-span "
+        f"({time.time()-t0:.1f}s)")
     if hcons:
-        log("  e.g. " + show_op(hcons[0]) + " = 0   <-- verify by hand")
+        log("  e.g. " + show_op(hcons[0]) + " = 0")
 
     Gmats, g_lin = [], []
     if use_G:
@@ -641,9 +700,6 @@ def solve_bootstrap(t=1, U=8, nu=Fraction(7, 8), use_G=True, do_max=False):
             Gmats = [G]
         log(f"G: kept {len(keep)}/{len(cands)} ops, "
             f"{len(g_lin)} harvested equalities, {time.time()-t0:.1f}s")
-        if keep:
-            log("  ops: " + ", ".join(show(min(cands[i])) for i in keep[:6])
-                + (" ..." if len(keep) > 6 else ""))
 
     allmats = Mmats + Gmats
     neutral2, charged2 = split_variables(allmats)
@@ -651,7 +707,13 @@ def solve_bootstrap(t=1, U=8, nu=Fraction(7, 8), use_G=True, do_max=False):
         "G blocks escaped M span despite filter"
 
     wards, dropped = ward_constraints(neutral)
+    log(f"wards: {len(wards)} kept, {dropped} dropped")
+
     prune_charged(allmats)
+    hcons = scrub_forms(hcons)
+    g_lin = scrub_forms(g_lin)
+    wards = scrub_forms(wards)      # no-op today (wards are built neutral),
+                                    # cheap insurance against future edits
 
     obj = objective(t, U)
     fill = filling_constraint(nu)
@@ -665,18 +727,72 @@ def solve_bootstrap(t=1, U=8, nu=Fraction(7, 8), use_G=True, do_max=False):
                   + [(g, 0) for g in g_lin])
 
     log(f"variables: {len(var_index)} neutral, {len(charged)} charged (pruned)")
-    log(f"equalities: 1 filling + {len(wards)} ward + {len(hcons)} H-linear "
-        f"+ {len(g_lin)} G-antisym")
-    log(f"objective: {show_op(obj)}")
 
-    lower, upper = assemble_and_solve(allmats, obj, equalities, var_index,
-                                      do_max=do_max)
-    return lower, upper
+    return assemble_and_solve(allmats, obj, equalities, var_index,
+                              do_max=do_max, stream_log=stream_log)
+
+# ============================================================
+# 13. Scan driver
+# ============================================================
+
+def run_scan():
+    # Ordered so the config the scan exists for (P=3 level=3, G off -- first
+    # configuration where the H-derived constraints can fire) lands before
+    # the more fragile G variants. MOSEK's iteration log streams for the
+    # P=3 level=3 solves only.
+    configs = [
+        (2, 2, False), (2, 2, True),
+        (2, 3, False), (2, 3, True),
+        (3, 2, False), (3, 2, True),
+        (3, 3, False), (3, 3, True),
+    ]
+    results = []
+    for p, level, use_G in configs:
+        set_patch(p)
+        big = (p == 3 and level == 3)
+        tag = f"P={p} level={level} G={'on ' if use_G else 'off'}"
+        log(f"\n=== {tag} ===")
+        t0 = time.time()
+        try:
+            lo, up = solve_bootstrap(level=level, use_G=use_G, do_max=True,
+                                     stream_log=big)
+            results.append((tag, lo, up, time.time() - t0, "ok"))
+        except Exception as e:
+            results.append((tag, None, None, time.time() - t0,
+                            f"FAILED: {type(e).__name__}: {e}"))
+            log(f"  FAILED after {time.time()-t0:.0f}s: "
+                f"{type(e).__name__}: {e}")
+
+    log("\n" + "=" * 74)
+    log(f"{'config':24s} {'lower':>12s} {'upper(max)':>12s} {'wall':>9s}")
+    log("-" * 74)
+    for tag, lo, up, wall, status in results:
+        if lo is None:
+            log(f"{tag:24s} {status}")
+        else:
+            log(f"{tag:24s} {lo:>12.6f} {up:>12.6f} {wall:>8.0f}s")
+    log("-" * 74)
+    log(f"{'AFQMC reference':24s} {-0.767:>12.3f}")
+
+import pickle, os
+
+SPAN_CACHE = "span_P3_L3.pkl"
 
 if __name__ == "__main__":
-    log("=== M only ===")
-    lo_M, up_M = solve_bootstrap(use_G=False, do_max=True)
-    log("\n=== M + G ===")
-    lo_MG, up_MG = solve_bootstrap(use_G=True, do_max=True)
-    log(f"\nM only:  [{lo_M:.6f}, {up_M:.6f}]")
-    log(f"M + G:   [{lo_MG:.6f}, {up_MG:.6f}]")
+    set_patch(3)
+    if os.path.exists(SPAN_CACHE):
+        with open(SPAN_CACHE, "rb") as fh:
+            neutral, span = pickle.load(fh)
+        log(f"loaded span from {SPAN_CACHE}")
+    else:
+        Mmats = [moment_matrix(b, label=f"block {i}")
+                 for i, b in enumerate(build_M_bases(3))]
+        neutral, charged = split_variables(Mmats)
+        span = neutral | charged | {0}
+        with open(SPAN_CACHE, "wb") as fh:
+            pickle.dump((neutral, span), fh)
+        log(f"cached span to {SPAN_CACHE}")
+    report_H_constraints(neutral, span, t=1, U=8)
+
+#if __name__ == "__main__":
+#    run_scan()

@@ -259,7 +259,7 @@ def show_op(op):
 # 6. CONFIGURATION -- all bootstrap content is chosen HERE
 # ============================================================
 
-PATCH = [(i, j) for i in range(3) for j in range(3)]
+PATCH = [(i, j) for i in range(4) for j in range(4)]
 
 # Interior anchor for ad_H (adds one ring of support).
 # Invariant: max candidate coordinate + OX + 1 < W.
@@ -280,7 +280,8 @@ def build_M_bases():
            for p in PATCH for q in PATCH for k in (DN, UP)]
     b12 = [IDENTITY] + [multiply(d_op(*p, k), c_op(*q, k))
                         for p in PATCH for q in PATCH for k in (DN, UP)]
-    return [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12]
+    #return [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12]
+    return [b6, b9, b12]
 
 def build_G_candidates():
     """Number-conserving only. The in-span filter removes what doesn't fit."""
@@ -428,20 +429,33 @@ def linear_H_constraints(variables, span, t, U):
 # ============================================================
 
 def build_G_block(cands, span, t, U):
-    """<O_i^dag [H, O_j]> over shifted candidates (both factors at the same
-    offset). Greedy removal to the in-span principal submatrix; then
-    symmetrize, harvesting antisymmetric parts (= <[H, O_i^dag O_j]> forms,
-    valid eigenstate equalities) instead of discarding them.
-    Returns (kept_indices, G_matrix, harvested_forms)."""
+    """<O_i^dag [H, O_j]> over shifted candidates. Two-stage filter:
+    (1) diagonal prefilter -- a candidate whose own <O^dag [H,O]> leaves the
+        span can never survive (deleting OTHERS can't repair its diagonal),
+        and the diagonal costs one entry instead of a row;
+    (2) greedy removal on the survivors to reach an in-span principal
+        submatrix.
+    Then symmetrize, harvesting antisymmetric parts (= <[H, O_i^dag O_j]>,
+    valid eigenstate equalities). Returns (kept_original_indices, G, harvested)."""
     for o in cands:
         for k in o:
             assert n_charge(k) == 0, "number-changing G candidate"
+
     scands = [shift_op(o, OX, OY) for o in cands]
-    n = len(scands)
-    dags = [dagger(o) for o in scands]
     hops = [ad_H_op(o, t, U) for o in scands]
-    form = [[to_linear_form(multiply(dags[i], hops[j])) for j in range(n)]
-            for i in range(n)]
+    dags = [dagger(o) for o in scands]
+
+    # stage 1: diagonal prefilter
+    pre = [i for i in range(len(scands))
+           if set(to_linear_form(multiply(dags[i], hops[i]))) <= span]
+    log(f"  G prefilter: {len(pre)}/{len(cands)} pass the diagonal test")
+    if not pre:
+        return [], [], []
+
+    # stage 2: full form fill on survivors, then greedy
+    n = len(pre)
+    form = [[to_linear_form(multiply(dags[pre[i]], hops[pre[j]]))
+             for j in range(n)] for i in range(n)]
     ok = [[set(form[i][j]) <= span for j in range(n)] for i in range(n)]
 
     alive = set(range(n))
@@ -452,11 +466,12 @@ def build_G_block(cands, span, t, U):
         if viol[worst] == 0:
             break
         alive.discard(worst)
-    keep = sorted(alive)
-    G = [[form[i][j] for j in keep] for i in keep]
+    keep_local = sorted(alive)
+    keep = [pre[i] for i in keep_local]
+    G = [[form[i][j] for j in keep_local] for i in keep_local]
 
     harvested, seen = [], set()
-    m = len(keep)
+    m = len(keep_local)
     for i in range(m):
         for j in range(i):
             keys = set(G[i][j]) | set(G[j][i])
@@ -662,7 +677,7 @@ def solve_bootstrap(t=1, U=8, nu=Fraction(7, 8), use_G=True, do_max=False):
 if __name__ == "__main__":
     log("=== M only ===")
     lo_M, up_M = solve_bootstrap(use_G=False, do_max=True)
-    log("\n=== M + G ===")
-    lo_MG, up_MG = solve_bootstrap(use_G=True, do_max=True)
+    #log("\n=== M + G ===")
+    #lo_MG, up_MG = solve_bootstrap(use_G=True, do_max=True)
     log(f"\nM only:  [{lo_M:.6f}, {up_M:.6f}]")
-    log(f"M + G:   [{lo_MG:.6f}, {up_MG:.6f}]")
+    #log(f"M + G:   [{lo_MG:.6f}, {up_MG:.6f}]")

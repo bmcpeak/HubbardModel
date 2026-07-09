@@ -9,7 +9,7 @@ import numpy as np
 import scipy.sparse as sp
 from functools import lru_cache
 from random import Random
-import bootstrap_hubbard as B
+from old import bootstrap_hubbard as B
 
 RNG = Random(7)
 MAXMODES = 18

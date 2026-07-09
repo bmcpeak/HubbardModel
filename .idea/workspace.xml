@@ -5,13 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d74d6a98-7e0f-402e-9122-29362af374d4" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/bootstrap_hubbard.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test_oracle.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bootstrap_hubbard_old.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/momentum_space.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/momentum_vs_position.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/reference integral.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/algebra.py" beforeDir="false" afterPath="$PROJECT_DIR$/algebra.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/exact_hamiltonian.py" beforeDir="false" afterPath="$PROJECT_DIR$/exact_hamiltonian.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mosek_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/mosek_test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bootstrap_hubbard.py" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap_hubbard.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/temp.py" beforeDir="false" afterPath="$PROJECT_DIR$/temp.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -56,7 +55,10 @@
     "Python.algebra.executor": "Run",
     "Python.bootstrap_hubbard.executor": "Run",
     "Python.exact_hamiltonian.executor": "Run",
+    "Python.momentum space.executor": "Run",
+    "Python.momentum_vs_position.executor": "Run",
     "Python.mosek_test.executor": "Run",
+    "Python.reference integral.executor": "Run",
     "Python.temp.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
@@ -80,5 +82,16 @@
       <updated>1765548829120</updated>
     </task>
     <servers />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/bootstrap_hubbard.py</url>
+          <line>277</line>
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

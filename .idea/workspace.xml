@@ -5,12 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d74d6a98-7e0f-402e-9122-29362af374d4" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/algebra.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/physics.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/run.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/symmetry.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/old-7-10/algebra.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/old-7-10/physics.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/old-7-10/run.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/old-7-10/symmetry.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/spin.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/old/test_oracle.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_oracle.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/algebra.py" beforeDir="false" afterPath="$PROJECT_DIR$/algebra.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/p4_run.json" beforeDir="false" afterPath="$PROJECT_DIR$/old-7-10/p4_run.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/run.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/symmetry.py" beforeDir="false" afterPath="$PROJECT_DIR$/symmetry.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -69,6 +73,7 @@
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/old-7-10" />
       <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/old" />
       <recent name="$PROJECT_DIR$/d" />
@@ -111,42 +116,42 @@
           <option name="timeStamp" value="3" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/run.py</url>
+          <url>file://$PROJECT_DIR$/old-7-10/run.py</url>
           <line>54</line>
           <option name="timeStamp" value="5" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/run.py</url>
+          <url>file://$PROJECT_DIR$/old-7-10/run.py</url>
           <line>102</line>
           <option name="timeStamp" value="6" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/run.py</url>
+          <url>file://$PROJECT_DIR$/old-7-10/run.py</url>
           <line>25</line>
           <option name="timeStamp" value="9" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/symmetry.py</url>
+          <url>file://$PROJECT_DIR$/old-7-10/symmetry.py</url>
           <line>301</line>
           <option name="timeStamp" value="11" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/symmetry.py</url>
+          <url>file://$PROJECT_DIR$/old-7-10/symmetry.py</url>
           <line>349</line>
           <option name="timeStamp" value="12" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/symmetry.py</url>
+          <url>file://$PROJECT_DIR$/old-7-10/symmetry.py</url>
           <line>308</line>
           <option name="timeStamp" value="14" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/run.py</url>
+          <url>file://$PROJECT_DIR$/old-7-10/run.py</url>
           <line>29</line>
           <option name="timeStamp" value="16" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/symmetry.py</url>
+          <url>file://$PROJECT_DIR$/old-7-10/symmetry.py</url>
           <line>357</line>
           <option name="timeStamp" value="17" />
         </line-breakpoint>

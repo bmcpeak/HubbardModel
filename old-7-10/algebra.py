@@ -7,30 +7,20 @@ Representation:
     d's in ascending mode order, c's in DESCENDING; under this convention
     dagger is the sign-free swap (D, C) -> (C, D).
   - Operator = dict {key: coeff}, normal-ordered monomials only.
-  - Linear form = dict {canonical_key: coeff}; key 0 = identity = the
-    constant term, never an SDP variable.
+  - Linear form = dict {canonical_key: coeff}; key 0 = the identity,
+    always the constant term, never an SDP variable.
 
-Canonicalization: orbit-minimum over Z^2 (by bounding-box anchoring)
-semidirect (D4 x spinflip x dagger), fermionic signs by inversion
-counting. canon defines the VARIABLE set (state invariance <gX> = <X>);
-irrep organization of operator bases (symmetry.py) and spin adaptation
-(spin.py) both presuppose it: Schur block-diagonalization holds as an
-identity of FORMS only because canon has already identified the orbits.
+Canonicalization: orbit-minimum over Z^2 (by anchoring) semidirect
+(D4 x spinflip x dagger), fermionic signs by inversion counting.
+canon defines the VARIABLE set (state-invariance <gX> = <X>); it is
+independent of, and required by, any irrep organization of operator
+bases (Schur block-diagonalization of moment matrices holds as an
+identity of forms only because canon has identified the orbits).
 
-Coordinate discipline: canon anchors at (0,0). Support-growing operations
-(ad_H, in physics.py) require pre-shifted interior input, and BOTH factors
-of any product must share the offset -- canon erases global shifts, never
-relative ones.
-
-Memory note: canon and _mono_product carry unbounded caches. At P=4-level-3
-scale these hold a few GB combined; that is a deliberate trade (cache hits
-dominate fill time). If a future run needs the RAM back, canon.cache_clear()
-between bases is safe -- correctness never depends on cache state.
-
-Compiled-kernel note (deferred): keys are ~2*NMODES-bit Python ints. Any
-numba/C++ kernel port requires a fixed-width multi-word key type. Nothing
-outside this file may assume Python-int keys beyond hashing and comparison,
-so that boundary stays portable.
+Coordinate discipline: canon anchors at (0,0). Any support-growing
+operation (ad_H lives in physics.py) needs pre-shifted interior input,
+and BOTH factors of any product must share the offset -- canon erases
+global shifts, never relative ones.
 """
 
 from functools import lru_cache
@@ -73,19 +63,9 @@ def sites_of(mask):
     return out
 
 def pack_sites(Dsites, Csites):
-    """Bitmask-packs site lists. NOTE: input ORDER is irrelevant (masks are
-    sets); duplicate sites are an error, asserted -- silently OR-ing a
-    duplicate used to produce a lower-degree monomial with no sign, which
-    is the trap this assert closes."""
     D = C = 0
-    for p in Dsites:
-        b = 1 << mode(*p)
-        assert not (D & b), f"duplicate d-site {p}"
-        D |= b
-    for p in Csites:
-        b = 1 << mode(*p)
-        assert not (C & b), f"duplicate c-site {p}"
-        C |= b
+    for p in Dsites: D |= 1 << mode(*p)
+    for p in Csites: C |= 1 << mode(*p)
     return pack(D, C)
 
 def shift_key(key, di, dj):
@@ -180,8 +160,8 @@ def commutator(A, B):
 
 def dagger(op):
     """Hermitian conjugate: sign-free (D,C) -> (C,D) under our convention.
-    NOTE: dagger maps charge-q bases to charge-(-q); it lives inside canon
-    (variable identification), never inside irrep block groups."""
+    NOTE for symmetry.py: dagger maps charge-q bases to charge-(-q) bases;
+    it acts WITHIN canon (variable identification), not within irrep blocks."""
     out = {}
     for key, v in op.items():
         D, C = unpack(key)
@@ -199,9 +179,9 @@ def op_of(key):
 # ============================================================
 # Symmetry group elements and canonicalization
 # ============================================================
-# PG8, act, parity_sign are shared with symmetry.py (representation
-# matrices are built from these same primitives so the layers cannot
-# drift -- this was the design lesson of the Mathematica verification).
+# PG8, FINITE, act, parity_sign are shared with symmetry.py (which builds
+# representation matrices from the same primitives) -- they live here so
+# the two layers cannot drift.
 
 PG8 = [
     (( 1, 0), ( 0, 1)), (( 0,-1), ( 1, 0)), ((-1, 0), ( 0,-1)), (( 0, 1), (-1, 0)),
@@ -217,9 +197,10 @@ def act(M, sf, p):
     return (a * i + b * j, c_ * i + d_ * j, s ^ sf)
 
 def parity_sign(sites):
-    """Sign of the permutation sorting the mode sequence. Only relative
-    signs between original and image matter; the fixed c-storage reversal
-    cancels between them."""
+    """Parity of the permutation sorting the mode-index sequence. Only
+    relative signs between original and image matter; the fixed reversal
+    between c-storage order (descending) and traversal order (ascending)
+    cancels between original and image."""
     seq = [mode(*p) for p in sites]
     inv = sum(1 for a in range(len(seq)) for b in range(a + 1, len(seq))
               if seq[a] > seq[b])
@@ -242,20 +223,10 @@ def _images(key):
 @lru_cache(maxsize=None)
 def canon(key):
     """-> (canonical_key, sign). sign = 0: EV forced to zero (some group
-    element maps the canonical representative to itself with -1).
-
-    Early exit: if the input IS an image minimum encountered with both
-    signs, we can stop -- but sign determination needs the full orbit, so
-    the only safe shortcut is the one taken: if key was already
-    canonicalized (cache hit on its own canonical rep), the lru_cache
-    handles it. The measured win is instead in _images call avoidance via
-    the identity check below (~40% of canon calls during orbit-propagated
-    fills arrive pre-anchored and pre-minimal)."""
+    element maps the canonical rep to itself with -1)."""
     if key == 0:
         return (0, 1)
     images = _images(key)
-    kmin = images[0][1] and min(k for k, _ in images) or min(
-        k for k, _ in images)
     kmin = min(k for k, _ in images)
     signs = {s for k, s in images if k == kmin}
     return (kmin, 0) if len(signs) == 2 else (kmin, signs.pop())
@@ -290,12 +261,6 @@ def sz_charge(key):
     q = sum(1 if s == UP else -1 for _, _, s in sites_of(D))
     q -= sum(1 if s == UP else -1 for _, _, s in sites_of(C))
     return q
-
-def s2_diagonal_charge(key):
-    """(placeholder hook for spin.py: nothing spin-algebraic belongs in
-    this file beyond sz_charge; the S^2 adjoint action is built in spin.py
-    from commutators, not from key inspection)."""
-    raise NotImplementedError
 
 # ============================================================
 # Printing

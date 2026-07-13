@@ -146,25 +146,53 @@ def substitute_form(form, subst):
     return {k: v for k, v in out.items() if v != 0}
 
 def apply_quotient_blockdata(blockdata, subst):
-    """blockdata: [(dim, a0, {key: (ri, ci, vv)})]. Re-key each variable's
-    triplets through subst, merging duplicates on (i, j)."""
+    """Substitute the ward quotient into per-variable triplets (exact
+    Fractions), then split each block along its spin sub-layout if one is
+    present: cross-spin entries must cancel exactly post-substitution
+    (asserted). blockdata entries: (dim, a0, pv, sub_layout_or_None)."""
     out = []
-    for dim, a0, pv in blockdata:
+    for dim, a0, pv, sub in blockdata:
         acc = {}
         for key, (ri, ci, vv) in pv.items():
             for k2, w in subst[key].items():
-                fw = float(w)
                 d = acc.setdefault(k2, {})
                 for r, c, v in zip(ri, ci, vv):
-                    d[(r, c)] = d.get((r, c), 0.0) + fw * v
-        pv2 = {}
+                    d[(r, c)] = d.get((r, c), Fraction(0)) + w * Fraction(v)
+        for k2 in list(acc):
+            acc[k2] = {rc: v for rc, v in acc[k2].items() if v != 0}
+            if not acc[k2]:
+                del acc[k2]
+        if not sub:
+            pv2 = {k2: ([r for (r, c) in d], [c for (r, c) in d],
+                        [float(v) for v in d.values()])
+                   for k2, d in acc.items()}
+            out.append((dim, a0, pv2))
+            continue
+        for lab, lo, hi in sub:
+            pv2 = {}
+            for k2, d in acc.items():
+                items = [(r - lo, c - lo, float(v))
+                         for (r, c), v in d.items()
+                         if lo <= r < hi and lo <= c < hi]
+                if items:
+                    pv2[k2] = ([x[0] for x in items],
+                               [x[1] for x in items],
+                               [x[2] for x in items])
+            a0_items = [(r - lo, c - lo, v) for r, c, v in
+                        zip(a0[0], a0[1], a0[2])
+                        if lo <= r < hi and lo <= c < hi]
+            out.append((hi - lo,
+                        ([x[0] for x in a0_items],
+                         [x[1] for x in a0_items],
+                         [x[2] for x in a0_items]), pv2))
         for k2, d in acc.items():
-            items = [(r, c, v) for (r, c), v in d.items() if v != 0.0]
-            if items:
-                pv2[k2] = ([r for r, c, v in items],
-                           [c for r, c, v in items],
-                           [v for r, c, v in items])
-        out.append((dim, a0, pv2))
+            for (r, c) in d:
+                assert any(lo <= r < hi and lo <= c < hi
+                           for _, lo, hi in sub), \
+                    "cross-spin entry survived the quotient"
+        for r, c in zip(a0[0], a0[1]):
+            assert any(lo <= r < hi and lo <= c < hi
+                       for _, lo, hi in sub), "a0 crosses spin sectors"
     return out
 
 # ============================================================
@@ -303,32 +331,74 @@ def solve_at_filling(prob, nu, do_max=False, min_too=True,
 # ============================================================
 
 if __name__ == "__main__":
+    import krylov as KR
+
     results = {}
     def bank(key, val):
         results[key] = val
-        with open("p4_spin_run.json", "w") as fh:
+        with open("krylov_test.json", "w") as fh:
             json.dump(results, fh, indent=1)
         log(f"BANKED {key} = {val:.6f}")
 
-    # Gate: certified config at P=3 (cheap insurance before a long run)
-    set_patch(3)
-    log("=== GATE: P=3 L3 quotient+spin (must be -0.938438) ===")
-    prob = prepare_problem(level=3, use_quotient=True,
-                           use_spin_blocks=True)
-    lo, _ = solve_at_filling(prob, Fraction(7, 8))
-    bank("gate", lo)
-    assert abs(lo + 0.938438) < 5e-6, "gate failed: do not launch P=4"
-    del prob
+    t, U = 1, 8
+    for depth in (1, 2, 3):
+        log(f"\n=== Krylov single-site seed, depth {depth} ===")
+        blockdata, variables, kr_eqs, chans = KR.build_krylov_problem(
+            KR.seed_star(), depth, t, U, log=log)
 
-    set_patch(4)
-    log("\n=== P=4 L3, diam<=2, quotient + spin blocks ===")
-    prob = prepare_problem(level=3, max_diam=2,
-                           check_equivariance=False,
-                           use_quotient=True, use_spin_blocks=True)
-    lo, _ = solve_at_filling(prob, Fraction(7, 8), stream_log=True)
-    bank("P4_L3_diam2_spin", lo)
-    log(f"\nP=4: {lo:.6f}  (P=3: -0.938438; variational band: "
-        f"-0.74 to -0.77)")
+        neutral = {k for k in variables if sz_charge(k) == 0}
+        assert neutral == variables, "charged variable escaped the fill"
+
+        wards, _ = ward_constraints(neutral)
+        wards = scrub_forms(wards)
+        kept, subst = SP.build_ward_quotient(wards, sorted(neutral),
+                                             log=log)
+        blockdata_q = apply_quotient_blockdata(
+            [(d, a, p, None) for d, a, p in blockdata], subst)
+        obj = substitute_form(objective(t, U), subst)
+        fillf = substitute_form(filling_constraint(Fraction(1, 2))[0],
+                                subst)
+        eqs = [(f2, 0) for e in kr_eqs
+               if (f2 := substitute_form(e, subst))]
+        var_index = {k: i for i, k in enumerate(kept)}
+
+        prob = dict(blockdata=blockdata_q, var_index=var_index,
+                    obj=obj, fill_form=fillf, eqs=eqs)
+        lo, _ = solve_at_filling(prob, Fraction(7, 8))
+        bank(f"depth_{depth}", lo)
+        log(f"depth {depth}: {lo:.6f}  "
+            f"({len(kept)} vars, {len(eqs)} equalities)")
+
+    log("\nreference ladder: P=2L2 -1.359, P=2L3 -1.216, "
+        "P=3L2 -1.120, P=3L3 -0.938")
+
+# if __name__ == "__main__":
+#     results = {}
+#     def bank(key, val):
+#         results[key] = val
+#         with open("p4_spin_run.json", "w") as fh:
+#             json.dump(results, fh, indent=1)
+#         log(f"BANKED {key} = {val:.6f}")
+#
+#     # Gate: certified config at P=3 (cheap insurance before a long run)
+#     set_patch(3)
+#     log("=== GATE: P=3 L3 quotient+spin (must be -0.938438) ===")
+#     prob = prepare_problem(level=3, use_quotient=True,
+#                            use_spin_blocks=True)
+#     lo, _ = solve_at_filling(prob, Fraction(7, 8))
+#     bank("gate", lo)
+#     assert abs(lo + 0.938438) < 5e-6, "gate failed: do not launch P=4"
+#     del prob
+#
+#     set_patch(4)
+#     log("\n=== P=4 L3, diam<=2, quotient + spin blocks ===")
+#     prob = prepare_problem(level=3, max_diam=2,
+#                            check_equivariance=False,
+#                            use_quotient=True, use_spin_blocks=True)
+#     lo, _ = solve_at_filling(prob, Fraction(7, 8), stream_log=True)
+#     bank("P4_L3_diam2_spin", lo)
+#     log(f"\nP=4: {lo:.6f}  (P=3: -0.938438; variational band: "
+#         f"-0.74 to -0.77)")
 
 
 # if __name__ == "__main__":

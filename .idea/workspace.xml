@@ -5,16 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d74d6a98-7e0f-402e-9122-29362af374d4" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/old-7-10/algebra.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/old-7-10/physics.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/old-7-10/run.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/old-7-10/symmetry.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/spin.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/anharmonic_bootstrap.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/krylov.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/algebra.py" beforeDir="false" afterPath="$PROJECT_DIR$/algebra.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/p4_run.json" beforeDir="false" afterPath="$PROJECT_DIR$/old-7-10/p4_run.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/run.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/symmetry.py" beforeDir="false" afterPath="$PROJECT_DIR$/symmetry.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,26 +45,27 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;Python tests.Python tests in test_oracle.py.executor&quot;: &quot;Run&quot;,
-    &quot;Python.algebra.executor&quot;: &quot;Run&quot;,
-    &quot;Python.bootstrap_hubbard.executor&quot;: &quot;Run&quot;,
-    &quot;Python.exact_hamiltonian.executor&quot;: &quot;Run&quot;,
-    &quot;Python.momentum space.executor&quot;: &quot;Run&quot;,
-    &quot;Python.momentum_vs_position.executor&quot;: &quot;Run&quot;,
-    &quot;Python.mosek_test.executor&quot;: &quot;Run&quot;,
-    &quot;Python.reference integral.executor&quot;: &quot;Run&quot;,
-    &quot;Python.run.executor&quot;: &quot;Run&quot;,
-    &quot;Python.symmetry.executor&quot;: &quot;Run&quot;,
-    &quot;Python.temp.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python tests.Python tests in test_oracle.py.executor": "Run",
+    "Python.algebra.executor": "Run",
+    "Python.anharmonic_bootstrap.executor": "Run",
+    "Python.bootstrap_hubbard.executor": "Run",
+    "Python.exact_hamiltonian.executor": "Run",
+    "Python.momentum space.executor": "Run",
+    "Python.momentum_vs_position.executor": "Run",
+    "Python.mosek_test.executor": "Run",
+    "Python.reference integral.executor": "Run",
+    "Python.run.executor": "Run",
+    "Python.symmetry.executor": "Run",
+    "Python.temp.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/old-7-10" />

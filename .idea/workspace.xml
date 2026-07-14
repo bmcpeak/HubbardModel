@@ -5,10 +5,25 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d74d6a98-7e0f-402e-9122-29362af374d4" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/anharmonic_bootstrap.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/krylov.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/old-7-13/algebra.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/old-7-13/krylov.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/old-7-13/run.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test_algebra.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/run.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/algebra.py" beforeDir="false" afterPath="$PROJECT_DIR$/algebra.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/anharmonic_bootstrap.png" beforeDir="false" afterPath="$PROJECT_DIR$/old-7-13/anharmonic_bootstrap.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/anharmonic_bootstrap.py" beforeDir="false" afterPath="$PROJECT_DIR$/old-7-13/anharmonic_bootstrap.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/krylov.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/krylov_test.json" beforeDir="false" afterPath="$PROJECT_DIR$/old-7-13/krylov_test.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/nu_scan.json" beforeDir="false" afterPath="$PROJECT_DIR$/old-7-13/nu_scan.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/p4_spin_run.json" beforeDir="false" afterPath="$PROJECT_DIR$/old-7-13/p4_spin_run.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/physics.py" beforeDir="false" afterPath="$PROJECT_DIR$/old-7-13/physics.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rebuild_run.json" beforeDir="false" afterPath="$PROJECT_DIR$/old-7-13/rebuild_run.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/spin.py" beforeDir="false" afterPath="$PROJECT_DIR$/old-7-13/spin.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/spin_test.json" beforeDir="false" afterPath="$PROJECT_DIR$/old-7-13/spin_test.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/symmetry.py" beforeDir="false" afterPath="$PROJECT_DIR$/old-7-13/symmetry.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_oracle.py" beforeDir="false" afterPath="$PROJECT_DIR$/old-7-13/test_oracle.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,11 +63,14 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python tests.Python tests in algebra.py.executor": "Run",
+    "Python tests.Python tests in test_algebra.py.executor": "Run",
     "Python tests.Python tests in test_oracle.py.executor": "Run",
     "Python.algebra.executor": "Run",
     "Python.anharmonic_bootstrap.executor": "Run",
     "Python.bootstrap_hubbard.executor": "Run",
     "Python.exact_hamiltonian.executor": "Run",
+    "Python.krylov.executor": "Run",
     "Python.momentum space.executor": "Run",
     "Python.momentum_vs_position.executor": "Run",
     "Python.mosek_test.executor": "Run",
@@ -68,6 +86,7 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/old-7-13" />
       <recent name="$PROJECT_DIR$/old-7-10" />
       <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/old" />
